@@ -50,14 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             users = [];
             usersSnap.forEach(s => users.push({ id: s.id, ...s.data() }));
 
-            if (users.length === 0) {
-                const newUserId = 'u_' + Date.now();
-                const defaultUser = {
-                    id: newUserId, name: 'ゲスト', phone: '0000', basicIn: '09:00', basicOut: '18:00', allowance: 0
-                };
-                await setDoc(doc(db, "users", newUserId), defaultUser);
-                users.push(defaultUser);
-            }
+            // 初期ユーザーの自動作成を削除しました
 
             const histSnap = await getDocs(collection(db, "history"));
             history = [];
@@ -358,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const hasPassword = u.password && u.password !== "";
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" class="edit-name" value="${u.name}" ${users.length === 1 ? 'required' : ''}></td>
+                <td><input type="text" class="edit-name" value="${u.name}" required></td>
                 <td><input type="tel" class="edit-phone" value="${u.phone || ''}" placeholder="09012345678"></td>
                 <td style="font-size: 0.8rem; color: var(--text-secondary); min-width: 90px;">
                     ${hasPassword ? `
@@ -372,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><input type="time" class="edit-out" value="${u.basicOut}"></td>
                 <td><input type="number" class="edit-allowance" value="${u.allowance}"></td>
                 <td>
-                    <button class="btn danger small delete-user-btn" data-id="${u.id}" ${users.length === 1 ? 'disabled title="最低1名必要"' : ''}>削除</button>
+                    <button class="btn danger small delete-user-btn" data-id="${u.id}">削除</button>
                 </td>
             `;
             settingsUsersBody.appendChild(tr);
@@ -383,7 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.delete-user-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                if (users.length <= 1) return;
                 const id = e.target.dataset.id;
                 users = users.filter(u => u.id !== id);
                 renderSettingsUsers();
