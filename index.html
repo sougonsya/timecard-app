@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タイムカード</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- SheetJS CDN (Excel出力用) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="user-greeting">タイムカードシステム</div>
+            <div class="header-actions">
+                <button id="adminLockBtn" class="icon-btn lock-btn" aria-label="管理者ロック">🔒</button>
+                <button id="settingsBtn" class="icon-btn admin-only" aria-label="設定" style="display: none;">⚙️</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- 時計表示エリア -->
+            <div class="clock-display">
+                <div class="date" id="currentDate"></div>
+                <div class="time" id="currentTime"></div>
+            </div>
+
+            <!-- 個別ログイン・打刻エリア -->
+            <div class="user-login-container" id="userLoginSection">
+                <input type="tel" id="userPunchPin" class="login-input" placeholder="電話番号を入力" title="パスワード">
+                <button id="userLoginBtn" class="btn primary"
+                    style="padding: 0.75rem 1.5rem; margin-left: 0.5rem;">ログイン</button>
+            </div>
+
+            <div class="logged-in-container" id="loggedInSection" style="display: none;">
+                <div class="logged-in-user">
+                    <span id="loggedInUserName"></span> さん
+                    <button id="userLogoutBtn" class="btn secondary small" style="margin-left: 1rem;">ログアウト</button>
+                </div>
+
+                <!-- 打刻ボタンエリア -->
+                <div class="action-buttons">
+                    <button id="punchInBtn" class="punch-btn in">出勤</button>
+                    <button id="punchOutBtn" class="punch-btn out">退勤</button>
+                </div>
+            </div>
+
+            <div class="status-message" id="statusMessage"></div>
+
+            <!-- 集計・エクスポートエリア -->
+            <section class="aggregation-section glass-panel admin-only" style="display: none;">
+                <h3>集計・エクスポート</h3>
+                <div class="date-range">
+                    <input type="date" id="startDate" title="集計開始日">
+                    <span>〜</span>
+                    <input type="date" id="endDate" title="集計締め日">
+                </div>
+                <div class="aggregate-actions">
+                    <button id="calculateBtn" class="btn secondary">集計する</button>
+                    <button id="exportExcelBtn" class="btn success">Excel出力</button>
+                </div>
+                <!-- 集計結果表示 -->
+                <div id="aggregateResultsContainer" style="display: none; margin-top: 1.5rem;">
+                    <!-- JSでユーザーごとの集計結果カードを追加 -->
+                </div>
+            </section>
+
+            <!-- 履歴表示エリア -->
+            <section class="history-section glass-panel admin-only" style="display: none;">
+                <h3>打刻履歴</h3>
+                <div class="table-responsive">
+                    <table id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>名前</th>
+                                <th>日付</th>
+                                <th>出勤</th>
+                                <th>退勤</th>
+                                <th>状態</th>
+                                <th>休憩</th>
+                                <th>実働</th>
+                                <th>残業</th>
+                                <th>手当</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <!-- JSで行を追加 -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="clearHistoryBtn" class="btn danger small">履歴リセット</button>
+            </section>
+        </main>
+    </div>
+
+    <!-- 個人設定モーダル -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 800px;">
+            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <h2>設定 (管理者モード)</h2>
+            <div class="form-group">
+                <label for="adminPasswordSet">管理者パスワード (新規設定・変更)</label>
+                <input type="password" id="adminPasswordSet" placeholder="パスワードを入力">
+            </div>
+
+            <h3
+                style="margin-top: 1.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border);">
+                ユーザー管理 <span id="userCountBadge"
+                    style="font-size: 0.8rem; font-weight: normal; margin-left: 0.5rem;">(0/20)</span></h3>
+
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table id="settingsUsersTable">
+                    <thead>
+                        <tr>
+                            <th>名前</th>
+                            <th>電話番号(PW)</th>
+                            <th>基本出勤</th>
+                            <th>基本退勤</th>
+                            <th>手当(円)</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settingsUsersBody">
+                        <!-- JSで入力行を追加 -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 1rem; display: flex; justify-content: space-between;">
+                <button id="addUserBtn" class="btn secondary">＋ ユーザー追加</button>
+                <button id="saveSettingsBtn" class="btn primary">保存して閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理者認証モーダル -->
+    <div id="authModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn" id="closeAuthModalBtn">&times;</span>
+            <h2>管理者認証</h2>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem; color: #cbd5e1;">管理機能にアクセスするためのパスワードを入力してください。（初期パスワード:
+                0000）</p>
+            <div class="form-group">
+                <label for="authPassword">管理者パスワード</label>
+                <input type="password" id="authPassword" placeholder="パスワードを入力">
+            </div>
+            <button id="authSubmitBtn" class="btn primary">ロック解除</button>
+        </div>
+    </div>
+
+    <!-- ローディングオーバーレイ -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>データ同期中...</p>
+    </div>
+
+    <!-- メインロジック -->
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
