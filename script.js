@@ -86,6 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const loggedInUserName = document.getElementById('loggedInUserName');
     const userLogoutBtn = document.getElementById('userLogoutBtn');
 
+    // Change Password
+    const changePwdBtn = document.getElementById('changePwdBtn');
+    const changePasswordModal = document.getElementById('changePasswordModal');
+    const closeChangePasswordModalBtn = document.getElementById('closeChangePasswordModalBtn');
+    const newPasswordInput = document.getElementById('newPassword');
+    const newPasswordConfirmInput = document.getElementById('newPasswordConfirm');
+    const changePasswordSubmitBtn = document.getElementById('changePasswordSubmitBtn');
+
     const punchInBtn = document.getElementById('punchInBtn');
     const punchOutBtn = document.getElementById('punchOutBtn');
     const statusMessageEl = document.getElementById('statusMessage');
@@ -101,6 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const authPasswordInput = document.getElementById('authPassword');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
     const adminOnlyElements = document.querySelectorAll('.admin-only');
+
+    // Help Modals
+    const helpModal = document.getElementById('helpModal');
+    const closeHelpModalBtn = document.getElementById('closeHelpModalBtn');
+    const userHelpBtn = document.getElementById('userHelpBtn');
+    const helpTabBtns = document.querySelectorAll('.help-tab-btn');
+    const helpContents = document.querySelectorAll('.help-content');
+
+    const settingsHelpModal = document.getElementById('settingsHelpModal');
+    const closeSettingsHelpModalBtn = document.getElementById('closeSettingsHelpModalBtn');
+    const adminHelpBtn = document.getElementById('adminHelpBtn');
 
     // Settings Modal
     const settingsModal = document.getElementById('settingsModal');
@@ -163,19 +182,86 @@ document.addEventListener('DOMContentLoaded', () => {
     userLoginBtn.addEventListener('click', () => {
         const pin = userPunchPin.value.trim();
         if (!pin) {
-            alert('電話番号を入力してください。');
+            alert('パスワードを入力してください。');
             return;
         }
 
-        const user = users.find(u => u.phone === pin);
+        const user = users.find(u => {
+            if (u.password && u.password !== "") {
+                return u.password === pin;
+            } else {
+                return u.phone === pin;
+            }
+        });
+
         if (user) {
             currentUserForPunch = user.id;
             userPunchPin.value = '';
             checkLoginState();
         } else {
-            alert('入力された電話番号に一致するユーザーが登録されていません。');
+            alert('入力されたパスワード（または初期パスワードとしての電話番号）が間違っています。');
         }
     });
+
+    /* --- Password Change Logic --- */
+    if (changePwdBtn) {
+        changePwdBtn.addEventListener('click', () => {
+            newPasswordInput.value = '';
+            newPasswordConfirmInput.value = '';
+            changePasswordModal.classList.add('show');
+        });
+    }
+
+    if (closeChangePasswordModalBtn) {
+        closeChangePasswordModalBtn.addEventListener('click', () => {
+            changePasswordModal.classList.remove('show');
+        });
+    }
+
+    if (changePasswordSubmitBtn) {
+        changePasswordSubmitBtn.addEventListener('click', async () => {
+            const np = newPasswordInput.value.trim();
+            const npc = newPasswordConfirmInput.value.trim();
+
+            if (!np) {
+                alert('新しいパスワードを入力してください。');
+                return;
+            }
+            if (np !== npc) {
+                alert('確認用パスワードが一致しません。');
+                return;
+            }
+
+            // 重複チェック
+            const isDuplicate = users.some(u => {
+                if (u.id === currentUserForPunch) return false;
+                if (u.password === np) return true;
+                if (!u.password && u.phone === np) return true;
+                return false;
+            });
+
+            if (isDuplicate) {
+                alert('このパスワードは他のユーザーが使用しているため設定できません。');
+                return;
+            }
+
+            const user = getUserById(currentUserForPunch);
+            if (!user) return;
+
+            user.password = np;
+
+            showLoading();
+            try {
+                if (db) await setDoc(doc(db, "users", user.id), user);
+                alert('パスワードを変更しました。');
+                changePasswordModal.classList.remove('show');
+            } catch (e) {
+                console.error(e);
+                alert("パスワードの保存に失敗しました");
+            }
+            hideLoading();
+        });
+    }
 
     userPunchPin.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -269,10 +355,19 @@ document.addEventListener('DOMContentLoaded', () => {
         userCountBadge.textContent = `(${users.length}/20)`;
 
         users.forEach(u => {
+            const hasPassword = u.password && u.password !== "";
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><input type="text" class="edit-name" value="${u.name}" ${users.length === 1 ? 'required' : ''}></td>
                 <td><input type="tel" class="edit-phone" value="${u.phone || ''}" placeholder="09012345678"></td>
+                <td style="font-size: 0.8rem; color: var(--text-secondary); min-width: 90px;">
+                    ${hasPassword ? `
+                    <div style="display:flex; align-items:center; gap:0.2rem;">
+                        <span>********</span>
+                        <button class="btn danger small reset-pw-btn" data-id="${u.id}" title="PWリセット">消</button>
+                    </div>
+                    ` : '未設定'}
+                </td>
                 <td><input type="time" class="edit-in" value="${u.basicIn}"></td>
                 <td><input type="time" class="edit-out" value="${u.basicOut}"></td>
                 <td><input type="number" class="edit-allowance" value="${u.allowance}"></td>
@@ -292,6 +387,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = e.target.dataset.id;
                 users = users.filter(u => u.id !== id);
                 renderSettingsUsers();
+            });
+        });
+
+        document.querySelectorAll('.reset-pw-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.target.dataset.id;
+                const u = users.find(user => user.id === id);
+                if (u && confirm(`${u.name} のパスワードを初期化（電話番号でのログインに戻す）しますか？`)) {
+                    u.password = "";
+                    renderSettingsUsers();
+                }
             });
         });
     }
@@ -349,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: u.id,
                 name: nameStr,
                 phone: phoneStr,
+                password: u.password || "",
                 basicIn: row.querySelector('.edit-in').value || '09:00',
                 basicOut: row.querySelector('.edit-out').value || '18:00',
                 allowance: Number(row.querySelector('.edit-allowance').value) || 0
@@ -382,6 +489,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         hideLoading();
     });
+
+    /* --- Help Modal Logic --- */
+    function openHelpModal(tabId) {
+        // 全てのタブとコンテンツをリセット
+        helpTabBtns.forEach(btn => btn.classList.remove('active'));
+        helpContents.forEach(content => content.classList.remove('active'));
+
+        // 指定されたタブとコンテンツをアクティブにする
+        const targetBtn = Array.from(helpTabBtns).find(btn => btn.dataset.target === tabId);
+        const targetContent = document.getElementById(tabId);
+
+        if (targetBtn && targetContent) {
+            targetBtn.classList.add('active');
+            targetContent.classList.add('active');
+        }
+
+        helpModal.classList.add('show');
+    }
+
+    if (userHelpBtn) {
+        userHelpBtn.addEventListener('click', () => {
+            openHelpModal('userHelpContent');
+        });
+    }
+
+    if (closeHelpModalBtn) {
+        closeHelpModalBtn.addEventListener('click', () => {
+            helpModal.classList.remove('show');
+        });
+    }
+
+    helpTabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.currentTarget.dataset.target;
+            openHelpModal(targetId);
+        });
+    });
+
+    // Settings 専用ヘルプのロジック
+    if (adminHelpBtn) {
+        adminHelpBtn.addEventListener('click', () => {
+            settingsHelpModal.classList.add('show');
+        });
+    }
+
+    if (closeSettingsHelpModalBtn) {
+        closeSettingsHelpModalBtn.addEventListener('click', () => {
+            settingsHelpModal.classList.remove('show');
+        });
+    }
 
     /* --- Aggregate User Dropdown --- */
     function renderAggregateUserDropdown() {

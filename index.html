@@ -19,6 +19,7 @@
             <div class="user-greeting">タイムカードシステム</div>
             <div class="header-actions">
                 <button id="adminLockBtn" class="icon-btn lock-btn" aria-label="管理者ロック">🔒</button>
+                <button id="userHelpBtn" class="icon-btn" aria-label="使い方">❓</button>
                 <button id="settingsBtn" class="icon-btn admin-only" aria-label="設定" style="display: none;">⚙️</button>
             </div>
         </header>
@@ -32,7 +33,8 @@
 
             <!-- 個別ログイン・打刻エリア -->
             <div class="user-login-container" id="userLoginSection">
-                <input type="tel" id="userPunchPin" class="login-input" placeholder="電話番号を入力" title="パスワード">
+                <input type="password" id="userPunchPin" class="login-input" placeholder="パスワード (初期: 電話番号)"
+                    title="パスワード">
                 <button id="userLoginBtn" class="btn primary"
                     style="padding: 0.75rem 1.5rem; margin-left: 0.5rem;">ログイン</button>
             </div>
@@ -40,7 +42,8 @@
             <div class="logged-in-container" id="loggedInSection" style="display: none;">
                 <div class="logged-in-user">
                     <span id="loggedInUserName"></span> さん
-                    <button id="userLogoutBtn" class="btn secondary small" style="margin-left: 1rem;">ログアウト</button>
+                    <button id="changePwdBtn" class="btn secondary small" style="margin-left: 1rem;">PW変更</button>
+                    <button id="userLogoutBtn" class="btn secondary small" style="margin-left: 0.5rem;">ログアウト</button>
                 </div>
 
                 <!-- 打刻ボタンエリア -->
@@ -103,7 +106,10 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content glass-panel" style="max-width: 800px;">
             <span class="close-btn" id="closeModalBtn">&times;</span>
-            <h2>設定 (管理者モード)</h2>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem;">
+                <h2 style="margin-bottom: 0;">設定 (管理者モード)</h2>
+                <button id="adminHelpBtn" class="icon-btn" aria-label="管理者向けの使い方" style="margin-right: 2rem;">❓</button>
+            </div>
             <div class="form-group">
                 <label for="adminPasswordSet">管理者パスワード (新規設定・変更)</label>
                 <input type="password" id="adminPasswordSet" placeholder="パスワードを入力">
@@ -119,7 +125,8 @@
                     <thead>
                         <tr>
                             <th>名前</th>
-                            <th>電話番号(PW)</th>
+                            <th>電話番号</th>
+                            <th>パスワード</th>
                             <th>基本出勤</th>
                             <th>基本退勤</th>
                             <th>手当(円)</th>
@@ -150,6 +157,90 @@
                 <input type="password" id="authPassword" placeholder="パスワードを入力">
             </div>
             <button id="authSubmitBtn" class="btn primary">ロック解除</button>
+        </div>
+    </div>
+
+    <!-- パスワード変更モーダル -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn" id="closeChangePasswordModalBtn">&times;</span>
+            <h2>パスワード変更</h2>
+            <div class="form-group">
+                <label for="newPassword">新しいパスワード</label>
+                <input type="password" id="newPassword" placeholder="新しいパスワードを入力">
+            </div>
+            <div class="form-group">
+                <label for="newPasswordConfirm">新しいパスワード (確認)</label>
+                <input type="password" id="newPasswordConfirm" placeholder="もう一度入力してください">
+            </div>
+            <button id="changePasswordSubmitBtn" class="btn primary" style="width: 100%;">変更する</button>
+        </div>
+    </div>
+
+    <!-- ヘルプ（使い方）モーダル -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
+            <span class="close-btn" id="closeHelpModalBtn">&times;</span>
+            <div class="help-tabs">
+                <button class="help-tab-btn active" data-target="userHelpContent">ユーザー</button>
+                <button class="help-tab-btn" data-target="adminHelpContent">管理者</button>
+            </div>
+            <div class="help-content-area">
+                <!-- ユーザー向けヘルプ -->
+                <div id="userHelpContent" class="help-content active">
+                    <h3>■ 打刻手順</h3>
+                    <ol>
+                        <li>最初の画面で<strong>パスワード（初期は電話番号）</strong>を入力し、「ログイン」を押します。</li>
+                        <li>「出勤」または「退勤」ボタンを押すことで打刻されます。</li>
+                        <li>打刻後、自動的にログアウトされ元の画面に戻ります。</li>
+                    </ol>
+                    <h3>■ パスワードの変更</h3>
+                    <p>初期パスワードとして電話番号が設定されています。ログイン後、画面上部の<strong>「PW変更」</strong>から任意のパスワードに変更できます（※他の人と被るパスワードは設定できません）。
+                    </p>
+                </div>
+
+                <!-- 管理者向けヘルプ -->
+                <div id="adminHelpContent" class="help-content">
+                    <h3>■ 管理者設定へのアクセス</h3>
+                    <p>画面右上の「🔒」アイコンをクリックし、管理者パスワード（初期値：0000）を入力するとロックが解除され、設定アイコン（⚙️）や履歴、集計画面が表示されます。</p>
+                    <h3>■ 従業員の追加・パスワードリセット</h3>
+                    <p>「⚙️設定」から従業員を追加できます。電話番号は初期パスワードとして機能します。</p>
+                    <p>従業員がパスワードを忘れた場合、該当従業員のパスワード欄にある<strong>「消」ボタン</strong>を押して保存すると、パスワードが初期化され再び電話番号でログインできるようになります。
+                    </p>
+                    <h3>■ 履歴の削除と集計</h3>
+                    <ul>
+                        <li><strong>履歴の削除:</strong> 履歴一覧の右側「削除」ボタンで1件ずつ、一番下の「履歴リセット」で全て削除できます。</li>
+                        <li><strong>Excel出力:</strong> 締め日と開始日を選択し、「Excel出力」を押すと全員の集計結果がダウンロードされます。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定モーダル専用ヘルプ（ユーザー管理の説明） -->
+    <div id="settingsHelpModal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
+            <span class="close-btn" id="closeSettingsHelpModalBtn">&times;</span>
+            <div class="help-content-area">
+                <div class="help-content active" style="display: block;">
+                    <h2 style="margin-bottom: 1rem;">ユーザー管理（設定）の使い方</h2>
+                    <h3>■ 管理者パスワードの変更</h3>
+                    <p>「管理者パスワード」欄に新しいパスワードを入力し、右下の「保存して閉じる」を押すと、次回以降のロック解除に適用されます。</p>
+
+                    <h3>■ 従業員（ユーザー）の追加と設定</h3>
+                    <p>「＋ ユーザー追加」ボタンで従業員を増やせます（最大20名）。設定項目は以下の通りです。</p>
+                    <ul>
+                        <li><strong>名前:</strong> 管理画面や打刻時に表示される名前です。</li>
+                        <li><strong>電話番号:</strong> 従業員がログインする際の「初期パスワード」として使用します（他の人と同じ番号は使えません）。</li>
+                        <li><strong>基本出退勤:</strong> この時間を基準に、遅刻・早退・残業時間が自動で計算されます。</li>
+                        <li><strong>手当:</strong> 1回の稼働に対して付与される固定の金額です。</li>
+                    </ul>
+
+                    <h3>■ パスワードの初期化（リセット）</h3>
+                    <p>従業員が自身で設定したパスワードを忘れてしまった場合、対象従業員のパスワード欄にある<strong>「消」ボタン</strong>を押し、最後に保存を行ってください。パスワードが削除され、再度「電話番号」でログインできるようになります。
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 

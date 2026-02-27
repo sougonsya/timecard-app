@@ -587,6 +587,72 @@ tbody tr:last-child td {
     margin-bottom: 2rem;
 }
 
+/* --- Help Modal Tabs --- */
+.help-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.2rem;
+}
+
+.help-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 0.7rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+}
+
+.help-tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-alt);
+}
+
+.help-tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.help-content {
+    display: none;
+    animation: fadeIn 0.2s ease;
+}
+
+.help-content.active {
+    display: block;
+}
+
+.help-content h3 {
+    margin: 1rem 0 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.help-content p,
+.help-content li {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.help-content ol,
+.help-content ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.help-content strong {
+    color: var(--text-primary);
+}
+
 /* --- Loading Overlay --- */
 .loading-overlay {
     position: fixed;
