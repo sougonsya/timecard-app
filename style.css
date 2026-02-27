@@ -624,3 +624,79 @@ tbody tr:last-child td {
         transform: rotate(360deg);
     }
 }
+
+/* --- Mobile Optimizations --- */
+@media (max-width: 600px) {
+    body {
+        padding: 16px 12px 60px;
+    }
+
+    /* 時計を少し大きく、見やすく */
+    .time {
+        font-size: 5.5rem;
+        /* より大きく */
+        letter-spacing: -3px;
+    }
+
+    .date {
+        font-size: 1.1rem;
+    }
+
+    /* ログイン入力欄を押しやすく */
+    .login-input {
+        padding: 1rem 1.4rem;
+        font-size: 1.2rem;
+        max-width: 100%;
+    }
+
+    .user-login-container {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+        padding: 0 1rem;
+    }
+
+    #userLoginBtn {
+        margin-left: 0 !important;
+        padding: 1rem;
+        font-size: 1.1rem;
+    }
+
+    /* 打刻ボタンを巨大化して押しやすく */
+    .action-buttons {
+        gap: 1.5rem;
+    }
+
+    .punch-btn {
+        width: 155px;
+        height: 155px;
+        font-size: 1.8rem;
+    }
+
+    /* 管理者／設定ボタンも少し大きく */
+    .icon-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+    }
+
+    /* ログイン状態のユーザー名 */
+    .logged-in-user {
+        font-size: 1.3rem;
+    }
+
+    /* モーダル表示を画面いっぱいに近く */
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.8rem 1.2rem;
+        font-size: 1rem;
+    }
+
+    .btn.small {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
