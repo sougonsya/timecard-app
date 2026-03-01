@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let history = [];
     let currentSessions = {};
     let currentUserForPunch = null;
+    let deletedUserIds = new Set();
     const loadingOverlay = document.getElementById('loadingOverlay');
 
     function showLoading() { if (loadingOverlay) loadingOverlay.style.display = 'flex'; }
@@ -377,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.delete-user-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.target.dataset.id;
+                deletedUserIds.add(id);
                 users = users.filter(u => u.id !== id);
                 renderSettingsUsers();
             });
@@ -400,7 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsModal.classList.add('show');
     });
 
-    closeModalBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
+    closeModalBtn.addEventListener('click', async () => {
+        deletedUserIds.clear();
+        await loadServerData();
+        renderHistory();
+        renderAggregateUserDropdown();
+        checkLoginState();
+        settingsModal.classList.remove('show');
+    });
 
     addUserBtn.addEventListener('click', () => {
         if (users.length >= 20) return;
@@ -458,13 +467,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showLoading();
         try {
-            const newIds = newUsers.map(u => u.id);
-            const deletedUsers = users.filter(u => !newIds.includes(u.id));
             if (db) {
-                for (let du of deletedUsers) await deleteDoc(doc(db, "users", du.id));
+                for (let id of deletedUserIds) await deleteDoc(doc(db, "users", id));
                 for (let nu of newUsers) await setDoc(doc(db, "users", nu.id), nu);
             }
             users = newUsers;
+            deletedUserIds.clear();
 
             const newPwd = adminPasswordSetInput.value.trim();
             if (newPwd && newPwd !== adminPassword) {
